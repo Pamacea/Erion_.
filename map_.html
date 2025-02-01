@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Carte d'Erion - Univers - Erion</title>
+    <meta name="title" content="Carte d'Erion - Univers - Erion">
+
+    <style>
+        body {
+            background: #000;
+            margin: 0;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        }
+
+        .app_root {
+            bottom: 0;
+            position: fixed;
+            overflow: hidden;
+            top: 0;
+            width: 100%;
+    }
+
+        #interactive_map {
+            width: 100%;
+            height: 100vh;  /* ou toute autre hauteur souhaitée */
+            position: relative; /* Nécessaire pour le positionnement absolu de #zoom */
+            overflow: hidden;   /* Empêche le contenu de sortir du conteneur */
+        }
+
+
+        button {
+            background: none;
+            border: none;
+            color: inherit;
+            font: inherit;
+            outline: none;
+            padding: 0;
+            text-decoration: none;
+            text-transform: inherit;
+            /* -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+            -webkit-tap-highlight-color: transparent; */
+        }
+
+        button:not([disabled]) {
+            cursor: pointer;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            padding: 0;
+            margin: 0;
+            font: inherit;
+        }
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        p {
+            margin: 0;
+        }
+
+        html[lang='ko'] {
+            word-break: keep-all;
+        }
+
+        html[lang='de'] {
+            word-break: break-word;
+        }
+
+        @font-face {
+            font-family: 'Beaufort';
+            font-weight: bold;
+            src: url(assets/fonts/BeaufortforLOL-Bold.ttf) format("opentype")
+        }
+
+        @font-face {
+            font-family: 'Beaufort';
+            font-weight: normal;
+            src: url(assets/fonts/BeaufortforLOL-Regular.ttf) format("opentype")
+        }
+
+        @font-face {
+            font-family: 'Spiegel';
+            font-weight: bold;
+            src: url(assets/fonts/Spiegel-Bold.otf) format("opentype")
+        }
+
+        @font-face {
+            font-family: 'Spiegel';
+            font-weight: normal;
+            src: url(assets/fonts/Spiegel-Regular.otf) format("opentype")
+        }
+
+        @font-face {
+            font-family: 'Spiegel';
+            font-weight: 600;
+            src: url(assets/fonts/Spiegel-SemiBold.otf) format("opentype")
+        }
+
+    </style> <!-- BASE STYLE -->>
+    <style>
+        #interactive_map {
+            position: relative;
+        }
+        #terrain {
+            display: block;
+            position: relative;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .territory {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1;
+
+            visibility: hidden;
+            opacity: 0;
+        }
+
+    </style> <!-- MAP (z1)-->
+    <style>
+        .toolbar_root {
+            display: flex;
+            justify-content: space-between;
+            position: absolute;
+            bottom: 0;
+            opacity: 0.6;
+
+            z-index: 10; /* Garde l'image au-dessus du fond flouté */
+        }
+
+        @media (min-width: 701px) {
+            .toolbar_root {
+                flex-direction: row;
+                height: 50px;
+                width: 100%;
+            }
+        }
+
+        .toolbar_erion {
+            margin-top: 15px;
+            margin-left: 10px;
+            height: 50px;
+            width: 120px;
+        }
+        .toolbar_insta {
+            margin-top: 15px;
+            margin-left: 50px;
+            height: 20px;
+            width: 20px;
+        }
+
+        .toolbar_root:before {
+            box-sizing: border-box;
+            content: '';
+            height: 100%;
+            position: absolute;
+            transition: opacity 0.2s;
+            width: 100%;
+        }
+
+        .toolbar_end {
+        align-items: center;
+        display: flex;
+        position: relative;
+    }
+    </style> <!-- TOOLBAR (z10)-->
+    <style>
+
+
+        .toolbar_button_01 {
+            align-items: center;
+            display: flex
+        ;
+            height: 100px;
+            justify-content: flex-start;
+            position: relative;
+            transition: fill 0.2s;
+            width: 100px;
+        }
+        .toolbar_button_01:not(:hover) {
+            fill: #f4f4f1;
+        }
+        .toolbar_button_01:hover {
+            fill: #c8aa6e;
+        }
+        @media (min-width: 701px) {
+            .toolbar_button_01.toolbar_logoButton_02 {
+                    margin-bottom: 10px;
+            }
+        }
+
+</style> <!-- BUTTONS -->
+    <style>
+
+        #zoom {
+            transform-origin: 0 0;
+            position: relative;
+            cursor: grab;
+
+            z-index: 3; /* Garde l'image au-dessus du fond flouté */
+
+        }
+
+
+    </style> <!-- ZOOM  (z-1/z1) -->
+
+    <style>
+        .icon {
+            position: absolute;
+            transform: translate(-50%, -50%); /* Centrer l'icône */
+            cursor: pointer;
+            z-index: 10;
+
+            filter: brightness(1.1) contrast(1.3) saturate(1.3);
+            transition: filter;
+
+            transition: opacity 1s ease-in-out, visibility 1s ease-in-out;
+            opacity: 0; /* Par défaut, les icônes sont invisibles */
+            visibility: hidden; /* Masquer les icônes par défaut */
+        }
+        .icon img {
+            width: 40px; /* Taille de l'icône */
+            height: 40px;
+        }
+        .icon.dyn img{
+            width: 50px; /* Taille de l'icône */
+            height: 50px;
+        }
+        .icon.town img {
+            width: 18px; /* Taille de l'icône */
+            height: 18px;
+        }
+        .icon.tre img {
+            width: 15px; /* Taille de l'icône */
+            height: 15px;
+        }
+        .icon:hover img {
+            filter: brightness(1.5) contrast(1.8) saturate(1.8); /* Amplifie la luminosité et les couleurs */
+            transition: filter 0.3s ease; /* Transition fluide */
+        }
+    </style><!-- Icons  (z10)-->
+    <style>
+        .icon {
+            z-index: 10;
+        }
+        /* Icones Capitales */
+        #havilah {
+                position: absolute;
+                top: 72%; /* Ajuste cette valeur */
+                left: 20%; /* Ajuste cette valeur */
+        }
+        #anatoth {
+            position: absolute;
+            top: 43%;
+            left: 53%;
+        }
+        #marah {
+            position: absolute;
+            top: 54.5%;
+            left: 25%;
+        }
+        #sinai {
+            position: absolute;
+            top: 19%;
+            left: 28%;
+        }
+        #sorek {
+            position: absolute;
+            top: 46.5%;
+            left: 66.5%;
+        }
+        #hanoii {
+            position: absolute;
+            top: 37.5%;
+            left: 78.5%;
+        }
+        #noch {
+            position: absolute;
+            top: 80%;
+            left: 46%
+        }
+        /* Icones Dynastie */
+        #dyn-uriah {
+            position: absolute;
+            top: 72%; /* Ajuste cette valeur */
+            left: 20%; /* Ajuste cette valeur */
+        }
+        #dyn-elealeh {
+            position: absolute;
+            top: 43%;
+            left: 53%;
+        }
+        #dyn-sakia{
+            position: absolute;
+            top: 54.5%;
+            left: 25%;
+        }
+        #dyn-enoch{
+            position: absolute;
+            top: 80%;
+            left: 46%
+        }
+        #dyn-zillah{
+             position: absolute;
+             top: 19%;
+             left: 28%;
+         }
+        #dyn-tamlek{
+              position: absolute;
+              top: 46.5%;
+              left: 66.5%;
+          }
+        #dyn-elhoi{
+            position: absolute;
+            top: 37.5%;
+            left: 78.5%;
+        }
+        #dyn-loth{
+            position: absolute;
+            top: 41%;
+            left: 64%;
+        }
+        /* Icones Villes */
+        #city_caris{
+            position: absolute;
+            top: 65%;
+            left: 18%;
+        }
+        #city_yibleam{
+            position: absolute;
+            top: 45%;
+            left: 12%;
+        }
+        #city_almon{
+            position: absolute;
+            top: 38%;
+            left: 26%;
+        }
+        #city_hermon{
+            position: absolute;
+            top: 26%;
+            left: 24%;
+        }
+        #city_ezer{
+            position: absolute;
+            top: 26%;
+            left: 37%;
+        }
+        #city_ramoth {
+            position: absolute;
+            top: 51%;
+            left: 47%;
+        }
+        #city_gibeon {
+            position: absolute;
+            top: 56%;
+            left: 57.5%;
+        }
+        #city_galaad {
+            position: absolute;
+            top: 56%;
+            left: 67.5%;
+        }
+        #city_japheth {
+            position: absolute;
+            top: 41%;
+            left: 64%;
+        }
+        #city_ayalon {
+            position: absolute;
+            top: 62%;
+            left: 88%;
+        }
+        #city_rama {
+            position: absolute;
+            top: 66.5%;
+            left: 74.5%;
+        }
+        #city_eshton {
+            position: absolute;
+            top: 80%;
+            left: 71%;
+        }
+        #city_bashan {
+            position: absolute;
+            top: 78%;
+            left: 39%;
+        }
+        /* Icones Trefonds */
+        #trefond_a{
+            position: absolute;
+            top: 43.5%;
+            left: 54%;
+        }
+        #trefond_b{
+            position: absolute;
+            top: 43.5%;
+            left: 33%;
+        }
+        #trefond_c{
+            position: absolute;
+            top: 25%;
+            left: 18%;
+        }
+        #trefond_d{
+            position: absolute;
+            top: 39%;
+            left: 14%;
+        }
+        #trefond_e{
+            position: absolute;
+            top: 61%;
+            left: 25.5%;
+        }
+        #trefond_f{
+            position: absolute;
+            top: 34.5%;
+            left: 60%;
+        }
+        #trefond_g{
+            position: absolute;
+            top: 17.5%;
+            left: 37.5%;
+        }
+        #trefond_h{
+            position: absolute;
+            top: 58%;
+            left: 58%;
+        }
+        #trefond_i{
+            position: absolute;
+            top: 45.5%;
+            left: 71%;
+        }
+        #trefond_j{
+            position: absolute;
+            top: 82%;
+            left: 38%;
+        }
+        #trefond_k{
+            position: absolute;
+            top: 81%;
+            left: 64.5%;
+        }
+    </style><!-- Positions des icons(z10)  -->
+
+    <style>
+        #side_panel {
+            position: fixed;
+            top: 0;
+            right: -400px;  /* Initialement caché */
+            width: 400px;
+            height: 100%;
+            background-image: url("assets/images/panel.png");
+            box-shadow: -3px 0 5px rgba(0, 0, 0, 0.2);
+            transition: right 0.3s ease;
+            z-index: 20;
+            opacity: 0.8;
+            display: flex;
+            flex-direction: column; /* Force l'alignement vertical */
+            border-left: 2px solid #0F161C;
+        }
+        #panel_content img,
+        #panel_content p {
+            display: block; /* Assure que chaque élément s'affiche sur une nouvelle ligne */
+            margin-top: 20px; /* Ajoute un peu d'espace entre les éléments */
+        }
+
+        #side_panel.open {
+            right: 0;
+        }
+        #close_panel {
+            position: absolute;
+            top: 15px;
+            right: 30px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #efe6d2;
+        }
+        #close_panel:hover {
+            color: #f4f3ee;
+        }
+        #panel_content {
+            color: whitesmoke;
+            font: 20px "Beaufort";
+            margin-top: 40px;
+            margin-left: 20px;
+
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        #panel_content article {
+        }
+        /* */
+        #flyout_panel {
+            display: none;
+            position: absolute;
+            top: 0;
+            margin-left: 10px !important;
+            width: 250px;
+            height: 60px;
+            background: linear-gradient(rgba(34, 39, 43, 0.5), rgba(34, 39, 43, 0.5)),
+            url("assets/images/panel.png") no-repeat  ;
+            box-shadow: -3px 0 5px rgba(0, 0, 0, 0.2);
+            transition: right 0.3s ease;
+            z-index: 20;
+
+            flex-direction: row; /* Force l'alignement vertical */
+
+            border-right: 1px solid whitesmoke;
+
+            clip-path: polygon(3% 0, 100% 0%, 100% 100%, 3% 100%, 3% 53%, 0 37%, 3% 21%);
+        }
+        #flypanel_content img,
+        #flypanel_content p {
+            display: block; /* Assure que chaque élément s'affiche sur une nouvelle ligne */
+        }
+        #flyout_panel.open {
+            display: block;
+            right: 0;
+        }
+        #flypanel_content {
+            overflow: hidden;
+            color: whitesmoke;
+            font: 14px "Beaufort", normal;
+            padding: 15px;
+
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        #flypanel_content article {
+            margin-left: 10px;
+        }
+    </style><!-- MAIN & FLY PANEL (z20)-->
+    <style>
+        #title_panel {
+            font-weight: bold;
+            letter-spacing: 0.06em;
+            line-height: 100%;
+            text-transform: uppercase;
+            font-family: Beaufort, Arial, sans-serif;
+            font-size: 30px;
+            color: whitesmoke;
+
+            margin-left: 100px;
+        }
+        #subtitle_panel {
+            font-weight: bold;
+            letter-spacing: 0.06em;
+            line-height: 100%;
+            text-transform: uppercase;
+            font-family: Beaufort, Arial, sans-serif;
+            font-size: 16px;
+            color: darkgray;
+
+            margin-left: 100px;
+        }
+
+        #desc-margin {
+            margin: 30px  20px;
+        }
+        #desc-container {
+            font-family: "Spiegel", Helvetica, sans-serif, microsoft yahei;
+            font-size: 14px;
+            line-height: 150%;
+            color: #a09b8c;
+            margin: 0;
+        }
+
+        #p-container {
+            line-height: 1.8;
+        }
+
+        .contentdetails_stat{
+            display: flex
+        ;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin: 25px 0 24px 20px;
+        }
+
+        .stat_root {
+            box-sizing: border-box;
+            flex-grow: 0;
+            flex-shrink: 0;
+            width: calc(50% - 20px* 0.5);
+        }
+
+        .stat_label {
+            font-family: "Spiegel", Helvetica, sans-serif, microsoft yahei;
+            font-size: 12px;
+            line-height: 150%;
+            color: #a09b8c;
+            margin-bottom: 3px;
+        }
+
+        .stat_value {
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            line-height: 100%;
+            text-transform: uppercase;
+            font-family: "Beaufort", Arial, sans-serif;
+            font-size: 12px;
+            color: #f0e6d2;
+            margin-bottom: 6px;
+        }
+
+        figure {
+            display: block;
+            margin-block-start: 1em;
+            margin-block-end: 1em;
+            margin-inline-start: 40px;
+            margin-inline-end: 40px;
+            unicode-bidi: isolate;
+        }
+
+        .divider-root{
+            position: relative;
+
+            transform: translateZ(0);
+            margin: 0;
+            width: 95%;
+        }
+        .divider-middle{
+            border-top: 1px solid #282a2e;
+            margin: 0 10px;
+        }
+
+        .espace-block{
+            margin: 70px;
+        }
+
+        .espace-block-1{
+            margin: 90px;
+        }
+
+    </style> <!-- CUSTOM TEXT PANEL (JS)-->
+    <style>
+        #title_flypanel {
+            font-weight: bold;
+            letter-spacing: 0.06em;
+            line-height: 100%;
+            text-transform: uppercase;
+            font-family: Beaufort, Arial, sans-serif;
+            font-size: 12px;
+            color: whitesmoke;
+        }
+        #subtitle_flypanel {
+            font-weight: bold;
+            letter-spacing: 0.06em;
+            line-height: 100%;
+            text-transform: uppercase;
+            font-family: Beaufort, Arial, sans-serif;
+            font-size: 10px;
+            color: darkgray;
+            margin-top: 5px;
+
+        }
+    </style><!-- CUSTOM TEXT FLYPANEL (JS)-->
+
+    <style>
+        #gallery_panel {
+            position: fixed;
+            top: -40px;
+            right: -20000px;  /* Initialement caché */
+            width: 100% !important;
+            height: 100% !important;
+            background-color: rgba(15, 22, 28, 0.8);
+            box-shadow: -3px 0 5px rgba(0, 0, 0, 0.2);
+            transition: right 0.3s ease;
+            z-index: 30;
+            display: flex;
+            flex-direction: column; /* Force l'alignement vertical */
+            overflow: auto;
+        }
+        .gallery-panel::-webkit-scrollbar {
+            width: 8px; /* Largeur de la scrollbar */
+        }
+
+        .gallery-panel::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5); /* Couleur de la barre */
+            border-radius: 4px; /* Arrondi */
+        }
+
+        .gallery-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 100, 100, 0.8); /* Changement de couleur au survol */
+        }
+
+        .gallery-panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1); /* Fond de la scrollbar */
+            border-radius: 4px;
+        }
+        #gallery_content img,
+        #gallery_content p {
+            display: block; /* Assure que chaque élément s'affiche sur une nouvelle ligne */
+        }
+        #gallery_panel.open {
+            right: 0;
+        }
+        #closegallery_panel {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #efe6d2;
+
+            z-index: 50;
+        }
+        #closegallery_panels:hover {
+            color: #fcfbf8;
+        }
+        #gallery_panel {
+            color: whitesmoke;
+            font: 20px "Beaufort";
+            margin-top: 40px;
+            margin-left: 20px;
+
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        #gallery_panel article {
+        }
+    </style><!-- GALLERY PANEL (z30) -->
+    <style>
+        .gallery_button{
+            width: 100%;
+            height :100%;
+            top: 20px;
+            left: 8px;
+
+            font-weight: bold;
+            letter-spacing: 0.06em;
+            line-height: 100%;
+            text-transform: uppercase;
+            text-align: left;
+            font-family: Beaufort, Arial, sans-serif;
+            font-size: 24px;
+            color: whitesmoke;
+        }
+        .gallery_button p {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .module_border{
+            margin-top: 30px;
+            margin-left: 20px;
+            width: 280px;
+            height: 80px;
+
+            background-color: whitesmoke;
+            padding: 1px;
+        }
+        .module_border:hover{
+            background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,217,140,1) 35%, rgba(255,196,75,1) 100%);
+            padding: 1px;
+        }
+    </style><!-- GALLERY BUTTONS (JS)-->
+    <style>
+        #palaishavilah {
+            background-image: url("assets/images/panel.png");
+        }
+        #danslajungle {
+            background-image: url("assets/images/panel.png");
+        }
+    </style> <!-- GALLERY BUTTONS BACKGROUND-->
+    <style>
+        #gcontent {
+            position: absolute;
+            display: block;
+            width: 400px;
+            height: 500px;
+            right: 0;
+            margin-top: 150px;
+            margin-right: 200px;
+        }
+        #g_page {
+            font-weight: bold;
+            letter-spacing: 0.06em;
+            line-height: 100%;
+            text-transform: uppercase;
+            font-family: Beaufort, Arial, sans-serif;
+            font-size: 14px;
+            color: darkgray;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        #gall_title {
+            font-weight: bold;
+            letter-spacing: 0.06em;
+            line-height: 100%;
+            text-transform: uppercase;
+            font-family: Beaufort, Arial, sans-serif;
+            font-size: 36px;
+            color: whitesmoke;
+            text-align: left;
+        }
+        #gall_subtittle{
+            font-weight: bold;
+            letter-spacing: 0.06em;
+            line-height: 100%;
+            text-transform: uppercase;
+            font-family: Beaufort, Arial, sans-serif;
+            font-size: 20px;
+            color: darkgray;
+            margin-top: 10px;
+            text-align: left;
+        }
+        #gall_desc {
+            font-weight: normal;
+            letter-spacing: 0.06em;
+            line-height: 100%;
+            font-family: Spiegel, Arial, sans-serif;
+            font-size: 16px;
+            color: whitesmoke;
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style><!-- CUSTOM TEXT GALLERY (JS)-->
+    <style>
+        .gimg {
+            position: absolute;
+            display: block;
+            top: 8%;
+            left: 8%;
+        }
+        .gimg img {
+            border: 1px solid #0F161C;
+            max-width: 1000px;
+            max-height: 800px;
+        }
+
+        .pagedown {
+            padding-top: 50%;
+            padding-bottom: 10%;
+        }
+    </style><!-- CUSTOM IMG GALLERY -->
+
+    <style>
+        .background-blur {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('assets/images/tiles/erion_map.png'); /* Ton image de fond */
+            background-size: cover;
+            background-position: center;
+            filter: blur(10px); /* Applique un flou à l'image de fond */
+            z-index: -1;
+
+        }
+        /**/
+        @keyframes cloudsAnimation {
+            0% {
+                left: 0;
+            }
+            100% {
+                left: -100%;
+            }
+        }
+        #fx-container{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 30;
+        }
+        #clouds {
+            background-image: url('assets/images/fx/clouds.png'); /* Remplace par ton image */
+            background-size: cover; /* Ajuste l'image pour couvrir tout le conteneur */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%; /* On crée une double largeur pour faire défiler l'image */
+            height: 100%;
+            animation: cloudsAnimation 30s linear infinite;
+            opacity: 0.06;
+
+        }
+        /**/
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-2px); }
+            100% { transform: translateY(0px); }
+        }
+        #interactive_map img {
+            animation: float 10s ease-in-out infinite;
+        }
+        /**/
+    </style><!-- FX -->
+    <style>
+        .poi {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 5;
+
+            transition: opacity 2s ease-in-out, visibility 2s ease-in-out;
+            opacity: 0; /* Par défaut, les icônes sont invisibles */
+            visibility: hidden; /* Masquer les icônes par défaut */
+        }
+    </style><!-- POI  -->
+
+    <script src="bundle.js" defer></script>
+</head>
+<body>
+
+<div id="root">
+    <div class="app_root">
+        <div id="interactive_map">
+            <div class="background-blur"></div>
+            <div id="fx-container">
+                <div id="clouds"></div>
+            </div>
+            <div id="zoom">
+                <!-- MAP -->
+                <img id="terrain" src="assets/images/tiles/erion_map.png" alt="carte">
+
+                <!-- TERRITORY -->
+                <img id="territoire_uriah" class="territory" src="assets/images/regions/terrain/terrain_uriah.png" alt="terrain">
+                <img id="territoire_sakia" class="territory" src="assets/images/regions/terrain/terrain_sakia.png" alt="terrain">
+                <img id="territoire_elealeh" class="territory" src="assets/images/regions/terrain/terrain_elealeh.png" alt="terrain">
+                <img id="territoire_enoch" class="territory" src="assets/images/regions/terrain/terrain_enoch.png" alt="terrain">
+                <img id="territoire_zillah" class="territory" src="assets/images/regions/terrain/terrain_zillah.png" alt="terrain">
+                <img id="territoire_tamlek" class="territory" src="assets/images/regions/terrain/terrain_tamlek.png" alt="terrain">
+                <img id="territoire_elhoi" class="territory" src="assets/images/regions/terrain/terrain_elhoi.png" alt="terrain">
+                <!-- CAPITALES -->
+                <div id="havilah" class="icon zcap" data-info="Havilah">
+                    <img src="assets/images/pins/capital.png" alt="capital_havilah">
+                </div>
+                <div id="anatoth" class="icon zcap"  data-info="Anatoth">
+                    <img src="assets/images/pins/capital.png" alt="capital-anatoth">
+                </div>
+                <div id="marah" class="icon zcap"  data-info="Marah">
+                    <img src="assets/images/pins/capital.png" alt="capital-marah">
+                </div>
+                <div id="sinai" class="icon zcap"  data-info="Sinai">
+                    <img src="assets/images/pins/capital.png" alt="capital-sinai">
+                </div>
+                <div id="sorek" class="icon zcap"  data-info="Sorek">
+                    <img src="assets/images/pins/capital.png" alt="capital-sorek">
+                </div>
+                <div id="hanoii" class="icon zcap"  data-info="Hanoii">
+                    <img src="assets/images/pins/capital.png" alt="capital-hanoii">
+                </div>
+                <div id="noch" class="icon zcap"  data-info="Noch">
+                    <img src="assets/images/pins/capital.png" alt="capital-noch">
+                </div>
+                <!-- DYNASTIES -->
+                <div id="dyn-sakia" class="icon dyn zdyn"  data-info="Sakia" data-image-id="territoire_sakia">
+                    <img src="assets/images/regions/sakia.png" alt="pays-sakia">
+                </div>
+                <div id="dyn-elealeh" class="icon dyn zdyn"  data-info="Elealeh" data-image-id="territoire_elealeh">
+                    <img src="assets/images/regions/elealeh.png" alt="pays-elealeh">
+                </div>
+                <div id="dyn-uriah" class="icon dyn zdyn"  data-info="Uriah" data-image-id="territoire_uriah">
+                    <img src="assets/images/regions/uriah.png" alt="pays-uriah">
+                </div>
+                <div id="dyn-enoch" class="icon dyn zdyn"  data-info="Enoch" data-image-id="territoire_enoch">
+                    <img src="assets/images/regions/enoch.png" alt="pays-enoch">
+                </div>
+                <div id="dyn-zillah" class="icon dyn zdyn"  data-info="Zillah" data-image-id="territoire_zillah">
+                    <img src="assets/images/regions/zillah.png" alt="pays-zillah">
+                </div>
+                <div id="dyn-tamlek" class="icon dyn zdyn"  data-info="Tamlek" data-image-id="territoire_tamlek">
+                    <img src="assets/images/regions/tamlek.png" alt="pays-tamlek">
+                </div>
+                <div id="dyn-elhoi" class="icon dyn zdyn"  data-info="Elhoi" data-image-id="territoire_elhoi">
+                    <img src="assets/images/regions/elhoi.png" alt="pays-elhoi">
+                </div>
+                <div id="dyn-loth" class="icon dyn zdyn"  data-info="Loth">
+                    <img src="assets/images/regions/loth.png" alt="pays-loth">
+                </div>
+                <!-- TREFOND -->
+                <div id="trefond_a" class="icon tre ztre"  data-info="tre_a">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_a">
+                </div>
+                <div id="trefond_b" class="icon tre ztre"  data-info="tre_b">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_b">
+                </div>
+                <div id="trefond_c" class="icon tre ztre"  data-info="tre_c">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_c">
+                </div>
+                <div id="trefond_d" class="icon tre ztre"  data-info="tre_d">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_d">
+                </div>
+                <div id="trefond_e" class="icon tre ztre"  data-info="tre_e">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_e">
+                </div>
+                <div id="trefond_f" class="icon tre ztre"  data-info="tre_f">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_f">
+                </div>
+                <div id="trefond_g" class="icon tre ztre"  data-info="tre_g">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_g">
+                </div>
+                <div id="trefond_h" class="icon tre ztre"  data-info="tre_h">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_h">
+                </div>
+                <div id="trefond_i" class="icon tre ztre"  data-info="tre_i">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_i">
+                </div>
+                <div id="trefond_j" class="icon tre ztre"  data-info="tre_j">
+                    <img src="assets/images/pins/trefond.png" alt="trefond-j">
+                </div>
+                <div id="trefond_k" class="icon tre ztre"  data-info="tre_k">
+                    <img src="assets/images/pins/trefond.png" alt="trefond_k">
+                </div>
+                <!-- TOWNS -->
+                <div id="city_caris" class="icon town ztow"  data-info="Caris">
+                    <img src="assets/images/pins/town.png" alt="city-caris">
+                </div>
+                <div id="city_yibleam" class="icon town ztow"  data-info="Yibléam">
+                    <img src="assets/images/pins/town.png" alt="city-yibléam">
+                </div>
+                <div id="city_almon" class="icon town ztow"  data-info="Almon">
+                    <img src="assets/images/pins/town.png" alt="city_almon">
+                </div>
+                <div id="city_hermon" class="icon town ztow"  data-info="Hermon">
+                    <img src="assets/images/pins/town.png" alt="city_hermon">
+                </div>
+                <div id="city_ezer" class="icon town ztow"  data-info="Ezer">
+                    <img src="assets/images/pins/town.png" alt="city_ezer">
+                </div>
+                <div id="city_ramoth" class="icon town ztow"  data-info="Ramoth">
+                    <img src="assets/images/pins/town.png" alt="city_ramoth">
+                </div>
+                <div id="city_gibeon" class="icon town ztow"  data-info="Gibeon">
+                    <img src="assets/images/pins/town.png" alt="city_gibeon">
+                </div>
+                <div id="city_galaad" class="icon town ztow"  data-info="Galaad">
+                    <img src="assets/images/pins/town.png" alt="city_galaad">
+                </div>
+                <div id="city_japheth" class="icon town ztow"  data-info="Japheth">
+                    <img src="assets/images/pins/town.png" alt="city_japheth">
+                </div>
+                <div id="city_ayalon" class="icon town ztow"  data-info="Japheth">
+                    <img src="assets/images/pins/town.png" alt="city_japheth">
+                </div>
+                <div id="city_rama" class="icon town ztow"  data-info="Rama">
+                    <img src="assets/images/pins/town.png" alt="city_rama">
+                </div>
+                <div id="city_eshton" class="icon town ztow"  data-info="Eshton">
+                    <img src="assets/images/pins/town.png" alt="city_eshton">
+                </div>
+                <div id="city_bashan" class="icon town ztow"  data-info="Bashan">
+                    <img src="assets/images/pins/town.png" alt="city_bashan">
+                </div>
+                <!-- TXT -->
+                <img  class="poi txt1" src="assets/images/poi_names/txt1.png" alt="poi">
+                <img  class="poi txt2" src="assets/images/poi_names/txt2.png" alt="poi">
+                <img  class="poi txt3" src="assets/images/poi_names/txt3.png" alt="poi">
+                <img  class="poi txt4" src="assets/images/poi_names/txt4.png" alt="poi">
+                <img  class="poi txt5" src="assets/images/poi_names/txt5.png" alt="poi">
+            </div>
+            </div>
+        </div>
+    </div>
+        <!-- PANEL  -->
+        <div id="side_panel">
+            <button id="close_panel">✖</button>
+            <div id="panel_content"></div>
+        </div>
+        <div id="gallery_panel">
+            <button id="closegallery_panel">✖</button>
+            <div id="gallery_content"></div>
+        </div>
+        <div id="flyout_panel">
+            <div id="flypanel_content"></div>
+        </div>
+        <!-- TOOLBAR -->
+        <div class="toolbar_root"> <!-- La toolbar -->
+            <div class="toolbar_end"> <!-- Bouton en haut -->
+                <a class="toolbar_button_01 toolbar_logoButton_02" href="" rel="noreferrer noopener" target="_blank">
+                    <svg class="toolbar_erion" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300.000000 67.000000" >
+                        <g transform="translate(0.000000,67.000000) scale(0.100000,-0.100000)" stroke="none">
+                            <path d="M2450 335 l0 -184 23 8 c21 8 22 13 25 172 2 145 1 165 -15 176 -9 7 -20 13 -25 13 -4 0 -8 -83 -8 -185z"/>
+                            <path d="M2821 504 c-22 -16 -23 -20 -19 -139 l3 -123 -105 97 c-58 53 -112 102 -120 110 -13 13 -15 11 -19 -15 -3 -26 10 -42 125 -151 71 -68 136 -123 146 -123 17 0 18 14 18 180 0 99 -1 180 -3 180 -1 0 -13 -7 -26 -16z m7 -295 l-3 -21 -27 22 c-33 25 -38 46 -7 30 18 -10 21 -8 27 12 l7 23 3 -22 c2 -13 2 -32 0 -44z"/>
+                            <path d="M180 487 c0 -23 0 -23 148 -22 146 0 182 7 182 36 0 5 -74 9 -165 9 l-165 0 0 -23z"/>
+                            <path d="M770 486 l0 -24 135 4 c111 3 137 1 150 -12 18 -19 20 -87 2 -102 -7 -6 -45 -12 -85 -14 l-72 -3 85 -88 c83 -86 86 -88 127 -85 l43 3 -79 65 -79 65 49 3 c64 4 74 18 74 107 0 105 0 105 -193 105 l-157 0 0 -24z"/>
+                            <path d="M1390 335 l0 -175 30 0 30 0 0 153 c0 148 -1 154 -23 175 -13 12 -26 22 -30 22 -4 0 -7 -79 -7 -175z"/>
+                            <path d="M1980 484 c0 -25 1 -25 55 -19 l55 7 0 -136 0 -136 -140 0 -140 0 0 55 0 55 -36 0 -37 0 7 -57 c11 -92 12 -93 203 -93 216 0 206 -9 201 182 -4 165 -5 168 -105 168 -61 0 -63 -1 -63 -26z"/>
+                            <path d="M180 295 l0 -135 170 0 170 0 0 26 0 26 -142 -3 -143 -4 0 59 0 60 55 -3 c49 -2 58 1 80 24 l25 26 -80 -2 -80 -2 -3 31 c-3 26 -8 32 -28 32 l-24 0 0 -135z"/>
+                            <path d="M770 296 l0 -136 29 0 28 0 -5 70 -5 70 38 0 c37 0 38 0 20 20 -10 11 -27 20 -37 20 -17 0 -19 6 -16 43 3 39 1 42 -24 45 l-28 3 0 -135z"/>
+                            <path d="M1910 335 c0 -10 11 -15 35 -15 24 0 35 5 35 15 0 10 -11 15 -35 15 -24 0 -35 -5 -35 -15z"/>
+                        </g>
+                    </svg></a>
+            </div>
+            <div class="toolbar_end">  <!-- Bouton en bas-->
+                <a class="toolbar_button_01 toolbar_logoButton_02" href="https://www.instagram.com/pama.eaa/?next=%2F" rel="noreferrer noopener" target="_blank">
+                    <svg class="toolbar_insta" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" viewBox="0 0 800 800" >
+                        <g>
+                            <path d="M395.8,97c-83.1,0-93.5,0.4-126.1,1.8c-32.6,1.5-54.8,6.6-74.2,14.2c-20.1,7.8-37.2,18.3-54.2,35.3   c-17,17-27.5,34.1-35.3,54.2c-7.6,19.5-12.7,41.7-14.2,74.2c-1.5,32.6-1.8,43.1-1.8,126.1s0.4,93.5,1.8,126.1   c1.5,32.6,6.7,54.8,14.2,74.2c7.8,20.1,18.3,37.2,35.3,54.2c17,17,34.1,27.5,54.2,35.3c19.5,7.6,41.7,12.7,74.2,14.2   c32.6,1.5,43,1.8,126.1,1.8c83.1,0,93.5-0.4,126.1-1.8c32.6-1.5,54.8-6.6,74.3-14.2c20.1-7.8,37.1-18.3,54.1-35.3   c17-17,27.5-34.1,35.3-54.2c7.5-19.5,12.7-41.7,14.2-74.2c1.5-32.6,1.8-43,1.8-126.1s-0.4-93.5-1.8-126.1   c-1.5-32.6-6.7-54.8-14.2-74.2c-7.8-20.1-18.3-37.2-35.3-54.2c-17-17-34-27.5-54.2-35.3c-19.5-7.6-41.7-12.7-74.3-14.2   C489.2,97.4,478.8,97,395.8,97L395.8,97z M368.4,152.1c8.1,0,17.2,0,27.4,0c81.7,0,91.3,0.3,123.6,1.8c29.8,1.4,46,6.3,56.8,10.5   c14.3,5.5,24.4,12.2,35.1,22.9c10.7,10.7,17.3,20.9,22.9,35.2c4.2,10.8,9.2,27,10.5,56.8c1.5,32.2,1.8,41.9,1.8,123.6   s-0.3,91.3-1.8,123.6c-1.4,29.8-6.3,46-10.5,56.8c-5.5,14.3-12.2,24.4-22.9,35.1c-10.7,10.7-20.9,17.3-35.1,22.9   c-10.8,4.2-27,9.2-56.8,10.5c-32.2,1.5-41.9,1.8-123.6,1.8c-81.7,0-91.4-0.3-123.6-1.8c-29.8-1.4-46-6.4-56.8-10.5   c-14.3-5.5-24.5-12.2-35.2-22.9c-10.7-10.7-17.3-20.9-22.9-35.2c-4.2-10.8-9.2-27-10.5-56.8c-1.5-32.2-1.8-41.9-1.8-123.6   s0.3-91.3,1.8-123.6c1.4-29.8,6.3-46,10.5-56.8c5.5-14.3,12.2-24.5,22.9-35.2c10.7-10.7,20.9-17.3,35.2-22.9   c10.8-4.2,27-9.2,56.8-10.5C300.5,152.5,311.4,152.1,368.4,152.1L368.4,152.1z M559.1,202.9c-20.3,0-36.7,16.4-36.7,36.7   c0,20.3,16.4,36.7,36.7,36.7c20.3,0,36.7-16.4,36.7-36.7S579.4,202.9,559.1,202.9L559.1,202.9z M395.8,245.8   c-86.7,0-157.1,70.3-157.1,157.1s70.3,157,157.1,157s157-70.3,157-157S482.6,245.8,395.8,245.8L395.8,245.8z M395.8,300.9   c56.3,0,102,45.6,102,102c0,56.3-45.6,102-102,102c-56.3,0-102-45.6-102-102C293.9,346.5,339.5,300.9,395.8,300.9z"/>
+                        </g>
+                    </svg>
+                </a>
+            </div>
+        </div>
+</body>
+</html>
